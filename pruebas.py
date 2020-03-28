@@ -1,40 +1,50 @@
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd
+import os
 
 from utils import file_name
+#TODO: iterate for all years/competitions
 
+#TODO: iterate for all the jornadas
+#TODO: check if the jornada is already done
+
+'''Sends a GET HTTP request to the given URL'''
 URL = 'http://competiciones.feb.es/estadisticas/Resultados.aspx?g=5&t=2019'
 page = requests.get(URL)
 
-
+'''Parses the recieved information (HTML in this case) to BeautifulSoup'''
 soup = BeautifulSoup(page.content, 'html.parser')
 
-#print(soup.find("div", {"class": "contentTablaDataGrid"}))
-
+'''Gets the results table (RESULTADOS in example image)'''
 results = soup.find("div", {"class": "contentTablaDataGrid"})
+#print(results)
+
+'''Too much code, only to get which jornada we are getting the data'''
 jornada = results.div.string[results.div.string.find('Jornada')+8: results.div.string.find('Jornada')+10]
-#if jornada.find(')'):
-#    jornada = jornada[0]
-#print(jornada)
-print('Jornada', results.div.string[results.div.string.find('Jornada')+8: results.div.string.find('Jornada')+10])
+print('Jornada', jornada)
 
-
+'''Finds all the URL to the statistics of each game of the jornada'''
 links = results.table.find_all('a')
-print(links)
+#print(links)
+
+'''Gets all the links to the statistics of each game'''
 l = []
 for link in links:
-    #print(link['href'].find('Partido'))
     if not(link['href'].find('Partido')):
         l.append('http://competiciones.feb.es/estadisticas/' + link['href'])
-print(len(l))
 
+'''Goes over every game found'''
 for li in l:
-    print(li)
-    page = requests.get(li)
+    #print(li)
+    page = requests.get(li) #Sends a GET HTTP request
 
-    soup = BeautifulSoup(page.content, 'html.parser')
+    soup = BeautifulSoup(page.content, 'html.parser') #Parses the content using a HTML canvas
 
+    #TODO: get all the information from the game: place (pista y localidad), marcadores parciales, marcador total, fecha y hora,
+    #TODO: check if the game is already in the file
+
+    '''Iterates over the tables found that have stats'''
     table = soup.find("table", {"class": "tablaDataGrid"})
     #print(table.prettify())
     counttables = 0
@@ -65,15 +75,12 @@ for li in l:
         val = []
         masmenos = []
 
-
+        '''Gets all the data'''
         a = table.tr
-        a = a.next_sibling
+        a = a.next_sibling #Needed beacuse the first <tr> is an empty string
         while a.next_sibling.next_sibling != None:
                 b = a.td
-                #print(b)
-                #print('a-------')
-                #print(a.prettify())
-                #print('b-------------------------')
+
                 c = 0
                 for i in range(18):
                     if i == 0: #Titular o no
@@ -121,9 +128,7 @@ for li in l:
                             count = count + 1
                             if count % 2 == 1: #I dont know why but the odd children are empty strings
                                 reb.append(c.span.string)
-                                #print(c.span.string)
                             c = c.next_sibling
-                        #print('c', count)
                         #print('Reb: ', reb)
                         reb_def.append(reb[0])
                         reb_of.append(reb[1])
@@ -137,7 +142,6 @@ for li in l:
                         #print('perdidos:', b.span.string)
                         perd.append(b.span.string)
                     if i == 13: #Tapones, favor contra
-                        #print('Tapones:', b)
                         c = b.td
                         tap = []
                         count= 0
@@ -173,25 +177,25 @@ for li in l:
                         masmenos.append(b.span.string)
                     b = b.next_sibling
 
-             #while b.next_sibling != None:
-                #print(b)
-                #c = c + 1
-                #print('c--------------')
-                #b = b.next_sibling
-            #print(c)
-
                 a = a.next_sibling
 
-
+        '''Crea diccionario con todos los nombres'''
         d = {'Nombre': nombre, 'Numero': num_jug, 'Titular': titular, 'Minutos': min, 'Puntos': pts,
              '2ptsmade': zone_made, '2ptstried': zone_throw, '3ptsmade': trip_made, '3ptstried': trip_throw,
              'TLmade': free_made, 'TLtried': free_throw, 'RebDef': reb_def, 'RebOf': reb_of, 'Asistencias': assist,
              'Recuperados': recu, 'Perdidos': perd, 'TapMade': tap_made, 'TapRecieved': tap_rec, 'Mates': dunk,
              'FaltasCometidas': foul_made, 'FaltasRecibidas': foul_rec, 'Valoracion': val, '+/-': masmenos}
 
+        '''Transforma diccionario en DataFrame de Pandas, cada fila son los datos un jugador determinado 
+        y cada columna nombres, numeros, si es titular...'''
         df = pd.DataFrame(data=d)
-        filename = file_name('Jornada' + jornada, table.previous_sibling.previous_sibling.string)
+
+        '''Crea un csv con los resultados de la jornada '''
+        filename = file_name('jornada' + jornada, table.previous_sibling.previous_sibling.string) #with the utils archive calculates the name of the csv file
         print(filename)
+        if (not os.path.exists(filename[:filename.find('/')])):
+            os.mkdir(filename[:filename.find('/')])
         df.to_csv(filename, index=False)
-        #print(df)
+
+        '''Find the next table to get the stats'''
         table = table.findNext("table", {"class": "tablaDataGrid"})
