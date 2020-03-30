@@ -37,8 +37,9 @@ We find every URL by searching for the tag \<a\> in HTML
 #### 2.Get the stats from the table in a certain game
 
 
+##### To use Selenuium is needed geckodriver depending OS an navigator
 
+Mozilla has been used so: https://github.com/mozilla/geckodriver/releases
 
-
-
+If there is a virtualenv -> extract it in "env/bin/geckodriver"
 
