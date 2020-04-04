@@ -4,6 +4,7 @@ import pandas as pd
 import os
 
 from utils import file_name
+
 #TODO: iterate for all years/competitions
 
 #TODO: iterate for all the jornadas
@@ -18,7 +19,7 @@ soup = BeautifulSoup(page.content, 'html.parser')
 
 '''Gets the results table (RESULTADOS in example image)'''
 results = soup.find("div", {"class": "contentTablaDataGrid"})
-#print(results)
+print(results.prettify())
 
 '''Too much code, only to get which jornada we are getting the data'''
 jornada = results.div.string[results.div.string.find('Jornada')+8: results.div.string.find('Jornada')+10]

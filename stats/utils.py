@@ -1,4 +1,5 @@
 import os
+import re
 
 def file_name(jornada, string):
     if string == 'NÁUTICO TENERIFE':
@@ -77,3 +78,11 @@ def file_name2(string):
         exit(1)
 
     return os.path.join(file) + '.csv'
+
+
+def getJornadaFromJornadaURL(results):
+    #jornada = results.div.string[results.div.string.find('Jornada')+8: results.div.string.find('Jornada')+10]
+    # mejor asi para eliminar parentesis y texto
+    jornada = re.sub("[\(\[].*?[\)\]]", "", results.div.string).replace('Resultados ','')
+    print(jornada)
+    return jornada

@@ -40,18 +40,12 @@ def search_t(busq):
             option.click()
             break
 
-def getJornada(results):
-    #jornada = results.div.string[results.div.string.find('Jornada')+8: results.div.string.find('Jornada')+10]
-    # mejor asi para eliminar parentesis y texto
-    jornada = re.sub("[\(\[].*?[\)\]]", "", results.div.string).replace('Resultados ','')
-    print(jornada)
-    return jornada
-    
 
-def getLinks():
+
+def getGameURLFromJornadaURL():
     soup = BeautifulSoup(driver.page_source, 'html.parser')
     results = soup.find("div", {"class": "contentTablaDataGrid"})
-    jornada = getJornada(results)
+    jornada = getJornadaFromJornadaURL(results)
     links = results.table.find_all('a')
     l = []
     for link in links:
@@ -80,7 +74,7 @@ def exportData(temporada, grupo, jornada, table, df):
     #df.to_csv(filename, index=False)
 
 
-def getMatch(temporada, grupo):
+def getStatsFromGameURL(temporada, grupo):
     jornada, l = getLinks()
     for li in l:
         #print(li)
