@@ -244,24 +244,18 @@ def getMatch(temporada, grupo):
     
 
 
-
-
-
-
-
-
-
-
 URL = 'http://competiciones.feb.es/estadisticas/default.aspx'
 page = requests.get(URL)
 soup = BeautifulSoup(page.content, 'html.parser')
+driver = webdriver.Firefox()
+driver.get(URL)
+driver.find_element_by_xpath("//a[@href='Resultados.aspx?g=5&t=2019']").click()
+soup = BeautifulSoup(driver.page_source, 'html.parser')
 temporadas = soup.find("select", {"id": "temporadasDropDownList"})
 t = []
 for e in temporadas.find_all('option'):
     t.append((e.string).replace('/','-'))  
-driver = webdriver.Firefox()
-driver.get(URL)
-driver.find_element_by_xpath("//a[@href='Resultados.aspx?g=5&t=2019']").click()
+
 
 for t_e in t:
     print(t_e)
