@@ -1,30 +1,40 @@
 import requests
 from bs4 import BeautifulSoup
-import pandas as pd
-from datetime import datetime
 
-URL = 'http://competiciones.feb.es/estadisticas/default.aspx'
-page = requests.get(URL)
-soup = BeautifulSoup(page.content, 'html.parser')
+from DBInterface import checkLeagueStateInDB, insertLeagueInDB, checkSeasonStateInDB, insertSeasonInDB
 
-def getLinks():
+
+
+def getLeagueURLsLeagueNamesFromMainURL(URL):
+    page = requests.get(URL)
+    soup = BeautifulSoup(page.content, 'html.parser')
+
     table_comp = soup.find("div", {"class": "navegarCompeticiones"})
     l = []
     for e in table_comp.find_all("a"):
         if 'resultados' in e['href'].lower():
             l.append('http://competiciones.feb.es/estadisticas/' + e['href'])
-    return l
+    leagues = []
+    for e in table_comp.find_all("li", {"class": "competicion"}):
+        if (int(e.text.find('[')) != -1):
+            leagues.append(str(e.text[0:e.text.index('[')]))
+        else:
+            leagues.append(str(e.text))
 
-def getSeason(url):
-    page = requests.get(url)
+    return l, leagues
+
+
+def getSeasonsFromLeagueURL(URL):
+    page = requests.get(URL)
     soup = BeautifulSoup(page.content, 'html.parser')
     temporadas = soup.find("select", {"id": "temporadasDropDownList"})
     t = []
     for e in temporadas.find_all('option'):
-        t.append((e.text).replace('/','-'))
+        t.append((e.text).replace('/', '-'))
     return t
 
-def getGender(name):
+
+def getGenderFromLeagueName(name):
     name = name.lower()
     if 'femenino' in name or 'femenina' in name:
         return 'female'
@@ -32,10 +42,11 @@ def getGender(name):
         return 'male'
     else:
         return 'male'
-    
-def getType(name):
-    posible_types = ['Mini','Amateur', 'Semiprofesional', 'Profesional']
-    leagues = ['mini','infantil','cadete', 'sub', 'eba', 'liga femenina', 'leb']
+
+
+def getTypeFromLeagueName(name):
+    posible_types = ['Mini', 'Amateur', 'Semiprofesional', 'Profesional']
+    leagues = ['mini', 'infantil', 'cadete', 'sub', 'eba', 'liga femenina', 'leb']
     name = name.lower()
     if leagues[0] in name:
         return posible_types[0]
@@ -47,57 +58,56 @@ def getType(name):
         return posible_types[3]
     else:
         return "None"
-    
 
-def getLeagueNames():
+#also inserts seasons and leagues into database
+def getLeaguesURLFromMainURL(URL):
+    leagueURLs, leagueNames = getLeagueURLsLeagueNamesFromMainURL(URL)
+    #print(leagueURLs[5])
 
-    table_comp = soup.find("div", {"class": "navegarCompeticiones"})
-    leagues = []
-    for e in table_comp.find_all("li", {"class": "competicion"}):
-        if(int(e.text.find('['))!=-1):
-            leagues.append(str(e.text[0:e.text.index('[')]))
-        else:
-            leagues.append(str(e.text))
-    return leagues
+    leagueids = []
+    #for i in range(len(leagueURLs)):
+    for i in range(5,6):
+        leagueName = leagueNames[i]
+        type = getTypeFromLeagueName(leagueName)
+        gender = getGenderFromLeagueName(leagueName)
 
+        league_state = checkLeagueStateInDB(leagueName)
 
-def main():
-    start = datetime.now()
-
-    df = pd.DataFrame(columns=['name','season','type','gender','state'])
-    leagues = []
-    links = getLinks()
-    reps = []
-    for e in links:
-        reps.append(len(getSeason(e)))
-    #print(getLeagueNames()[0])
-    i = 0
-    for league in reps:
-        #print(league)
-        for n_season in range(league):
-            
-            l = getLeagueNames()[i]
-            s = getSeason(links[i])[n_season]
-            t = getType(l)
-            g = getGender(l)
-            state = 'Spain'
-            #print(getSeason(links[i]))
-            leagues.append((l,s,t,g,state))
-            #print((l,s,t,g,state))
-            df.loc[len(df)] = [l, s, t, g, state]
-            #print(df)
-        i += 1
-    
-    print(df)
-    end = datetime.now()
-    time = end - start
-    print(time)
-    # 
+        if league_state[1] == 'finished':
+            leagueURLs.remove(leagueURLs[i])
+            break
+        elif league_state[1] == 'processing':
+            league_id = league_state[0]
+        elif league_state[1] == 'not_inserted':
+            league_id = insertLeagueInDB(leagueName, type, gender)
+        else:  # error
+            break
+        leagueids.append(league_id)
+        '''
+        for s in getSeasonsFromLeagueURL(leagueURLs[i]):
 
 
-    
+            season_state = checkSeasonStateInDB(league_id, s)
 
-# getSeason('http://competiciones.feb.es/estadisticas/Resultados.aspx?g=1&t=2019')
-# getLinks()
-# getLeagueNames()
-main()
+            if season_state[1] == 'finished':
+                leagueURLs.remove(leagueURLs[i])
+                break
+            elif season_state[1] == 'processing':
+                season_id = season_state[0]
+            elif season_state[1] == 'not_inserted':
+                season_id = insertSeasonInDB(league_id, s)
+                just_inserted = True
+            else:  # error
+                break
+        '''
+    print(leagueids, [leagueURLs[5]])
+    return [leagueids, [leagueURLs[5]]]
+
+
+if __name__ == '__main__':
+
+    URL = 'http://competiciones.feb.es/estadisticas/default.aspx'
+
+    print(getLeaguesURLFromMainURL(URL))
+
+    exit(0)

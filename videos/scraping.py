@@ -11,7 +11,7 @@ import itertools
 #TODO: check if the jornada is already done
 
 URL = 'https://canalfeb.tv'
-def getCompetitionsFromMainPage(URL):
+def getLeaguesFromMainPage(URL):
     page = requests.get(URL)
 
     '''Parses the recieved information (HTML in this case) to BeautifulSoup'''
@@ -39,8 +39,10 @@ def getCompetitionsFromMainPage(URL):
 
     return l
 
+#def getLeaguesFromDataBase():
+
 URL = 'https://canalfeb.tv/competiciones/liga-leb-oro'
-def getGameURLFromCompetitions(URL):
+def getGameURLFromLeagues(URL):
 
     '''Gets all the links to all the pages'''
     page = requests.get(URL)
@@ -130,13 +132,13 @@ if __name__ == '__main__':
     #exit(0)
     URL = 'https://canalfeb.tv'
     print('starting')
-    competitions = getCompetitionsFromMainPage(URL)
+    competitions = getLeaguesFromMainPage(URL)
     print(competitions)
     total_count = 0
     for c in competitions:
         #print(c)
         count = 0
-        gamesURL = getGameURLFromCompetitions(c)
+        gamesURL = getGameURLFromLeagues(c)
         for g in gamesURL:
             print(g, end='\r')
             count += 1
