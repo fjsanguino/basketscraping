@@ -31,7 +31,6 @@ def checkLeagueStateInDB(leagueName):
         if (connection.is_connected()):
             cursor.close()
             connection.close()
-            print("MySQL connection is closed")
 
 def insertLeagueInDB(leagueName, type, gender):
     try:
@@ -65,7 +64,6 @@ def insertLeagueInDB(leagueName, type, gender):
         if (connection.is_connected()):
             cursor.close()
             connection.close()
-            print("MySQL connection is closed")
 
 def updateLeagueInDB(leagueid):
     try:
@@ -82,13 +80,7 @@ def updateLeagueInDB(leagueid):
         if connection.is_connected():
                 cursor = connection.cursor()
                 cursor.execute(query)
-                records = cursor.fetchall()
-                if not(len(records)):
-                    return 'not_inserted'
-                elif len(records)==1:
-                    return records[0]
-                else:
-                    print('Error in game, more than two options' + leagueid)
+                connection.commit()
 
     except Error as e:
         print("Error while connecting to MySQL", e)
@@ -96,7 +88,6 @@ def updateLeagueInDB(leagueid):
         if (connection.is_connected()):
             cursor.close()
             connection.close()
-            print("MySQL connection is closed")
 
 
 def checkSeasonStateInDB(leagueid, years):
@@ -108,7 +99,7 @@ def checkSeasonStateInDB(leagueid, years):
             database="g3GJdRGWE4"
         )
 
-        query = 'select id, state_statistics from seasons where league_id = {} and years = {}'\
+        query = "select id, state_statistics from seasons where league_id = {} and years = '{}'"\
             .format(leagueid, years)
 
         if connection.is_connected():
@@ -128,7 +119,6 @@ def checkSeasonStateInDB(leagueid, years):
         if (connection.is_connected()):
             cursor.close()
             connection.close()
-            print("MySQL connection is closed")
 
 def insertSeasonInDB(leagueid, years):
     try:
@@ -161,7 +151,6 @@ def insertSeasonInDB(leagueid, years):
         if (connection.is_connected()):
             cursor.close()
             connection.close()
-            print("MySQL connection is closed")
 
 def updateSeasonInDB(seasonid):
     try:
@@ -178,13 +167,7 @@ def updateSeasonInDB(seasonid):
         if connection.is_connected():
                 cursor = connection.cursor()
                 cursor.execute(query)
-                records = cursor.fetchall()
-                if not(len(records)):
-                    return 'not_inserted'
-                elif len(records)==1:
-                    return records[0]
-                else:
-                    print('Error in game, more than two options' + seasonid)
+                connection.commit()
 
     except Error as e:
         print("Error while connecting to MySQL", e)
@@ -192,7 +175,6 @@ def updateSeasonInDB(seasonid):
         if (connection.is_connected()):
             cursor.close()
             connection.close()
-            print("MySQL connection is closed")
 
 
 def checkGroupStateInDB(seasonid, name):
@@ -204,7 +186,7 @@ def checkGroupStateInDB(seasonid, name):
             database="g3GJdRGWE4"
         )
 
-        query = 'select id, state_statistics from groups where season_id = {} and name = {}'\
+        query = "select id, state_statistics from `groups` where season_id = {} and group_name = '{}'"\
             .format(seasonid, name)
 
         if connection.is_connected():
@@ -224,7 +206,6 @@ def checkGroupStateInDB(seasonid, name):
         if (connection.is_connected()):
             cursor.close()
             connection.close()
-            print("MySQL connection is closed")
 
 def insertGroupInDB(seasonid, name):
     try:
@@ -235,7 +216,7 @@ def insertGroupInDB(seasonid, name):
             database="g3GJdRGWE4"
         )
 
-        query = "INSERT INTO groups (name, season_id, state_statistics) VALUES ('{}', {}, 'processing')"\
+        query = "INSERT INTO `groups` (group_name, season_id, state_statistics) VALUES ('{}', {}, 'processing')"\
             .format(name, seasonid)
 
         if connection.is_connected():
@@ -257,7 +238,6 @@ def insertGroupInDB(seasonid, name):
         if (connection.is_connected()):
             cursor.close()
             connection.close()
-            print("MySQL connection is closed")
 
 def updateGroupInDB(groupid):
     try:
@@ -268,19 +248,13 @@ def updateGroupInDB(groupid):
             database="g3GJdRGWE4"
         )
 
-        query = "UPDATE groups SET state_statistics='finished' WHERE id={} "\
+        query = "UPDATE `groups` SET state_statistics='finished' WHERE id={} "\
             .format(groupid)
 
         if connection.is_connected():
                 cursor = connection.cursor()
                 cursor.execute(query)
-                records = cursor.fetchall()
-                if not(len(records)):
-                    return 'not_inserted'
-                elif len(records)==1:
-                    return records[0]
-                else:
-                    print('Error in game, more than two options' + groupid)
+                connection.commit()
 
     except Error as e:
         print("Error while connecting to MySQL", e)
@@ -288,7 +262,6 @@ def updateGroupInDB(groupid):
         if (connection.is_connected()):
             cursor.close()
             connection.close()
-            print("MySQL connection is closed")
 
 
 def checkJornadaStateInDB(groupid, jornada):
@@ -300,7 +273,7 @@ def checkJornadaStateInDB(groupid, jornada):
             database="g3GJdRGWE4"
         )
 
-        query = 'select id, state_statistics from jornadas where group_id = {} and jornada = {}'\
+        query = "select id, state_statistics from jornadas where group_id = {} and jornada = '{}'"\
             .format(groupid, jornada)
 
         if connection.is_connected():
@@ -330,7 +303,7 @@ def insertJornadaInDB(groupid, jornada):
             database="g3GJdRGWE4"
         )
 
-        query = "INSERT INTO jornadas (jornada, group_id, state_statistics) VALUES ('{}', {}, 'processing')"\
+        query = "INSERT INTO jornadas (jornada, group_id, state_statistics) VALUES ({}, {}, 'processing')"\
             .format(jornada, groupid)
 
         if connection.is_connected():
@@ -368,16 +341,10 @@ def updateJornadaInDB(jornadaid):
         if connection.is_connected():
                 cursor = connection.cursor()
                 cursor.execute(query)
-                records = cursor.fetchall()
-                if not(len(records)):
-                    return 'not_inserted'
-                elif len(records)==1:
-                    return records[0]
-                else:
-                    print('Error in game, more than two options' + jornadaid)
+                connection.commit()
 
     except Error as e:
-        print("Error while connecting to MySQL", e)
+        print("Error while connecting to MySQL", e, " Updating jornada with jornada_id" + jornadaid)
     finally:
         if (connection.is_connected()):
             cursor.close()
@@ -385,7 +352,7 @@ def updateJornadaInDB(jornadaid):
 
 
 
-def checkGameInDB(jornadaid, game): #To be checked with home_team and away_team
+def checkGameStateInDB(jornadaid, game): #To be checked with home_team and away_team
     try:
         connection = mysql.connector.connect(
             host="remotemysql.com",
@@ -409,7 +376,7 @@ def checkGameInDB(jornadaid, game): #To be checked with home_team and away_team
                     print('Error in game, more than two options: jornada_id: ' + jornadaid + ', game: ' + game)
 
     except Error as e:
-        print("Error while connecting to MySQL", e)
+        print("Error while connecting to MySQL", e, " checking game with jornada_id " + jornadaid + " game" + game)
     finally:
         if (connection.is_connected()):
             cursor.close()
@@ -425,7 +392,7 @@ def insertGameInDB(jornadaid, game):
         )
 
         query = "INSERT INTO games (jornada_id, home_team, away_team, result, date_played, referee_1, referee_2, referee_3, place, court, score_q1, score_q2, score_q3, score_q4, state_statistics) VALUES ({}, '{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}', 'processing')"\
-            .format(jornadaid, game['home_team'], game['home_team'], game['away_team'], game['result'], game['date_played'], game['referee_1'], game['referee_2'], game['referee_3'], game['place'], game['court'], game['score_q1'], game['score_q2'], game['score_q3'], game['score_q4'])
+            .format(jornadaid, game['home_team'], game['away_team'], game['result'], game['date_played'].strftime('%Y-%m-%d %H:%M:%S'), game['referee_1'], game['referee_2'], game['referee_3'], game['place'], game['court'], game['score_q1'], game['score_q2'], game['score_q3'], game['score_q4'])
 
         if connection.is_connected():
             cursor = connection.cursor()
@@ -441,7 +408,7 @@ def insertGameInDB(jornadaid, game):
 
 
     except Error as e:
-        print("Error while connecting to MySQL", e)
+        print("Error while connecting to MySQL", e, ": Insert game with jornada_id: " + jornadaid + " game: " + game)
     finally:
         if (connection.is_connected()):
             cursor.close()
@@ -456,22 +423,16 @@ def updateGameInDB(gameid):
             database="g3GJdRGWE4"
         )
 
-        query = "UPDATE game SET state_statistics='finished' WHERE id={} "\
+        query = "UPDATE games SET state_statistics='finished' WHERE id={} "\
             .format(gameid)
 
         if connection.is_connected():
                 cursor = connection.cursor()
                 cursor.execute(query)
-                records = cursor.fetchall()
-                if not(len(records)):
-                    return 'not_inserted'
-                elif len(records)==1:
-                    return records[0]
-                else:
-                    print('Error in game, more than two options' + gameid)
+                connection.commit()
 
     except Error as e:
-        print("Error while connecting to MySQL", e)
+        print("Error while connecting to MySQL: ", e, " UPDATE GAME WITH GAMEID: ", gameid)
     finally:
         if (connection.is_connected()):
             cursor.close()
@@ -507,8 +468,11 @@ def insertStatsInDB(gameid, stats):
             database="g3GJdRGWE4"
         )
 
-        query = "INSERT INTO stats (game_id, PLAYER, NUMBER, starter, MIN, PTS, 2PA, 2PM, 3PA, 3PM, FTA, FTM, DREB, OREB, AST, STL, TOV, BLKM, BLKR, DNK, PFR, PFM, VAL, +/-) VALUES ({}, '{}', {}, {}, '{}', {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {})"\
-            .format(gameid, stats['PLAYER'] , stats['NUMBER'] , stats['starter'] , stats['MIN'] , stats['PTS'] , stats['2PA'] , stats['2PM'] , stats['3PA'] , stats['3PM'] , stats['FTA'] , stats['FTM'] , stats['DREB'] , stats['OREB'] , stats['AST'] , stats['STL'] , stats['TOV'] , stats['BLKM'] , stats['BLKR'] , stats['DNK'] , stats['PFR'] , stats['PFM'] , stats['VAL'] , stats['+/-)'])
+        if "'" in stats['PLAYER']:
+            stats['PLAYER'] = stats['PLAYER'].replace("'","")
+
+        query = "INSERT INTO stats (game_id, team, PLAYER, NUMBER, starter, MIN, PTS, 2PA, 2PM, 3PA, 3PM, FTA, FTM, DREB, OREB, AST, STL, TOV, BLKM, BLKR, DNK, PFR, PFM, VAL, PM) VALUES ({}, '{}', '{}', {}, {}, '{}', {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {})"\
+            .format(gameid, str(stats['team']), str(stats['PLAYER']), int(stats['NUMBER']), int(stats['starter']), str(stats['MIN']) , int(stats['PTS']), int(stats['2PA']), int(stats['2PM']), int(stats['3PA']), int(stats['3PM']), int(stats['FTA']) , int(stats['FTM']), int(stats['DREB']), int(stats['OREB']), int(stats['AST']), int(stats['STL']), int(stats['TOV']), int(stats['BLKM']), int(stats['BLKR']), int(stats['DNK']), int(stats['PFR']), int(stats['PFM']), int(stats['VAL']), int(stats['PM']))
 
         if connection.is_connected():
             cursor = connection.cursor()
@@ -516,19 +480,11 @@ def insertStatsInDB(gameid, stats):
             connection.commit()
             cursor.close()
 
-            cursor = connection.cursor()
-            cursor.execute('select LAST_INSERT_ID()')
-            records = cursor.fetchall()
-            return int(records[0][0]) #league_id
-
-
-
     except Error as e:
-        print("Error while connecting to MySQL", e)
+        print("Error while connecting to MySQL ", e, " to put stats in with game_id " + gameid + " and player " + stats)
     finally:
         if (connection.is_connected()):
             cursor.close()
             connection.close()
-            print("MySQL connection is closed")
 
 

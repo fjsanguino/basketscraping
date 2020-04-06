@@ -4,7 +4,6 @@ from bs4 import BeautifulSoup
 from DBInterface import checkLeagueStateInDB, insertLeagueInDB, checkSeasonStateInDB, insertSeasonInDB
 
 
-
 def getLeagueURLsLeagueNamesFromMainURL(URL):
     page = requests.get(URL)
     soup = BeautifulSoup(page.content, 'html.parser')
@@ -66,7 +65,8 @@ def getLeaguesURLFromMainURL(URL):
 
     leagueids = []
     #for i in range(len(leagueURLs)):
-    for i in range(5,6):
+    idx = [5,6,8,9,11]
+    for i in idx:
         leagueName = leagueNames[i]
         type = getTypeFromLeagueName(leagueName)
         gender = getGenderFromLeagueName(leagueName)
@@ -83,25 +83,12 @@ def getLeaguesURLFromMainURL(URL):
         else:  # error
             break
         leagueids.append(league_id)
-        '''
-        for s in getSeasonsFromLeagueURL(leagueURLs[i]):
 
-
-            season_state = checkSeasonStateInDB(league_id, s)
-
-            if season_state[1] == 'finished':
-                leagueURLs.remove(leagueURLs[i])
-                break
-            elif season_state[1] == 'processing':
-                season_id = season_state[0]
-            elif season_state[1] == 'not_inserted':
-                season_id = insertSeasonInDB(league_id, s)
-                just_inserted = True
-            else:  # error
-                break
-        '''
-    print(leagueids, [leagueURLs[5]])
-    return [leagueids, [leagueURLs[5]]]
+    leagueURLs = leagueURLs[5:]
+    leagueURLs.remove(leagueURLs[2])
+    leagueURLs.remove(leagueURLs[4])
+    leagueURLs = leagueURLs[:5]
+    return leagueids, leagueURLs
 
 
 if __name__ == '__main__':

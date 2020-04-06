@@ -5,7 +5,6 @@ from datetime import datetime
 
 '''Sends a GET HTTP request to the given URL'''
 # PARTIDO DE EJEMPLO
-URL = 'http://competiciones.feb.es/estadisticas/Partido.aspx?p=2097555&med=0'
 
 
 def getDate(soup):
@@ -78,5 +77,7 @@ def getGameDataFromGameURL(URL, jornada_id):
 
 # SE NECESITA PASAR "league_id" y "jornada"
 # 3 y 12 inventadas de ejemplo
-#getGameDataFromGameURL(URL, 3, 12)
+#URL = 'http://competiciones.feb.es/estadisticas/Partido.aspx?p=2097555&med=0'
+
+#getGameDataFromGameURL(URL, 78)
 
