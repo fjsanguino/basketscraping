@@ -161,7 +161,7 @@ def updateSeasonInDB(seasonid):
             database="g3GJdRGWE4"
         )
 
-        query = "UPDATE season SET state_statistics='finished' WHERE id={}"\
+        query = "UPDATE seasons SET state_statistics='finished' WHERE id={}"\
             .format(seasonid)
 
         if connection.is_connected():

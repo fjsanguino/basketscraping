@@ -20,11 +20,12 @@ def getJornadaURLFromJornadaNameStr(busq, j, driver):
             break
 
 
-def getGroupURLFromGroupNameStr(busq, driver):
+def getGroupURLFromGroupNameStr(busq, first, driver):
     g_el = driver.find_element_by_id("gruposDropDownList")
     for option in g_el.find_elements_by_tag_name('option'):
         if str(busq) in option.text:
-            option.click()
+            if not(first):
+                option.click()
             break
 
 
@@ -41,12 +42,19 @@ def getGamesURLFromJornadaURL(soup):
     results = soup.find("div", {"class": "contentTablaDataGrid"})
     jornada = getJornadaFromJornadaURL(results)
     links = results.table.find_all('a')
+
     l = []
+    finished = []
     for link in links:
         if not (link['href'].find('Partido')):
             l.append('http://competiciones.feb.es/estadisticas/' + link['href'])
+            if link.string == '*-*':
+                finished.append(False)
+            else:
+                finished.append(True)
+
     # print(l)
-    return jornada, l
+    return finished, jornada, l
 
 
 def exportData(temporada, grupo, jornada, table, df):
@@ -75,142 +83,150 @@ def getStatsFromGameURL(gameURL, jornada_id):
 
     soup = BeautifulSoup(page.content, 'html.parser')  # Parses the content using a HTML canvas
 
+
     game_data = getGameDataFromGameURL(gameURL, jornada_id)
 
-    '''check if season in database'''
-    game_state = DBInterface.checkGameStateInDB(jornada_id, game_data)
-    if game_state[1] == 'finished':
-        return
-    elif game_state[1] == 'processing':
-        game_id = game_state[0]
-        DBInterface.removeAllStatsInDB(game_id)
-    elif game_state[1] == 'not_inserted':
-        game_id = DBInterface.insertGameInDB(jornada_id, game_data)
-    else:  # error
-        return
 
-    '''Iterates over the tables found that have stats'''
-    table = soup.find("table", {"class": "tablaDataGrid"})
-    # print(table.prettify())
-    counttables = 0
-    team = 'home_team'
-    while table != None:
-        counttables = counttables + 1
+    if game_data != None:
 
-        '''Gets all the data'''
-        a = table.tr
-        a = a.next_sibling  # Needed beacuse the first <tr> is an empty string
-        while a.next_sibling.next_sibling != None:
-            b = a.td
-            c = 0
-            '''Variable defition'''
-            stat = {}
-            stat['team'] = team
-            for i in range(18):
-                if i == 0:  # Titular o no
-                    tit = False
-                    if b.string == None:
-                        tit = True
-                    # print('Titular:', tit)
-                    stat['starter'] = (tit)
-                if i == 1:  # Numero de jugador
-                    # print('Num jug:', b.span.string)
-                    stat['NUMBER'] = (b.span.string)
-                if i == 2:  # Nombre jugador
-                    # print('nombre:', b.a.string)
-                    stat['PLAYER'] = (b.a.string)
-                if i == 3:  # Minutos jugados
-                    # print('Min:', b.span.string)
-                    stat['MIN'] = (b.span.string)
-                if i == 4:  # Puntos anotados
-                    # print('Puntos:', b.span.string)
-                    stat['PTS'] = (b.span.string)
-                if i == 5:  # 2pts(anotados/intentados) porcentaje%
-                    # print('2pts:', b.span.string)
-                    zone = b.span.string
-                    stat['2PM'] = (zone[zone.find('/') - 1])
-                    stat['2PA'] = (zone[zone.find('/') + 1])
-                if i == 6:  # 3pts(anotados/intentados) porcentaje%
-                    # print('3pts:', b.span.string)
-                    trip = b.span.string
-                    stat['3PM'] = (trip[trip.find('/') - 1])
-                    stat['3PA'] = (trip[trip.find('/') + 1])
-                if i == 7:  # Tiros campo(anotados/intentados) porcentaje%
-                    hola = 1
-                    # print('Campo:', b.span.string)
-                if i == 8:  # T.L.(anotados/intentados) porcentaje%
-                    # print('T.L:', b.span.string)
-                    free = b.span.string
-                    stat['FTM'] = (free[free.find('/') - 1])
-                    stat['FTA'] = (free[free.find('/') + 1])
-                if i == 9:  # Rebotes, def of to
-                    c = b.td
-                    # print(b)
-                    reb = []
-                    count = 0
-                    while c.next_sibling != None:
-                        count = count + 1
-                        if count % 2 == 1:  # I dont know why but the odd children are empty strings
-                            reb.append(c.span.string)
-                        c = c.next_sibling
-                    # print('Reb: ', reb)
-                    stat['DREB'] = (reb[0])
-                    stat['OREB'] = (reb[1])
-                if i == 10:  # Asistencias
-                    # print('As:', b.span.string)
-                    stat['AST'] = (b.span.string)
-                if i == 11:  # Balones recuperados
-                    # print('Recuperados:', b.span.string)
-                    stat['STL'] = (b.span.string)
-                if i == 12:  # Balones perdidos
-                    # print('perdidos:', b.span.string)
-                    stat['TOV'] = (b.span.string)
-                if i == 13:  # Tapones, favor contra
-                    c = b.td
-                    tap = []
-                    count = 0
-                    while c.next_sibling != None:
-                        count = count + 1
-                        if count % 2 == 1:
-                            tap.append(c.span.string)
-                        c = c.next_sibling
-                    # print('Tap:', tap)
-                    stat['BLKM'] = (tap[0])
-                    stat['BLKR'] = (tap[1])
-                if i == 14:  # Mates
-                    # print('Mates:', b.span.string)
-                    stat['DNK'] = (b.span.string)
-                if i == 15:  # Faltas, cometidas recibidas
-                    c = b.td
-                    fal = []
-                    count = 0
-                    while c.next_sibling != None:
-                        count = count + 1
-                        if count % 2 == 1:  # I dont know why but the odd children are empty strings
-                            fal.append(c.span.string)
-                        # print(c)
-                        c = c.next_sibling
-                    # print('fouls', fal)
-                    stat['PFM'] = (fal[0])
-                    stat['PFR'] = (fal[1])
-                if i == 16:  # Valoracion
-                    # print('Valoracion:', b.span.string)
-                    stat['VAL'] = (b.span.string)
-                if i == 17:  # +/-
-                    # print('+/-:', b.span.string)
-                    stat['PM'] = (b.span.string)
-                b = b.next_sibling
+        '''check if season in database'''
+        game_state = DBInterface.checkGameStateInDB(jornada_id, game_data)
+        if game_state[1] == 'finished':
+            return
+        elif game_state[1] == 'processing':
+            game_id = game_state[0]
+            DBInterface.removeAllStatsInDB(game_id)
+        elif game_state[1] == 'not_inserted':
+            game_id = DBInterface.insertGameInDB(jornada_id, game_data)
+        else:  # error
+            return False
 
-            '''Inserts Data in Database'''
-            DBInterface.insertStatsInDB(game_id, stat)
+        print(gameURL)
 
-            a = a.next_sibling
+        '''Iterates over the tables found that have stats'''
+        table = soup.find("table", {"class": "tablaDataGrid"})
+        # print(table.prettify())
+        counttables = 0
+        team = 'home_team'
+        while table != None:
+            counttables = counttables + 1
 
-        '''Find the next table to get the stats'''
-        table = table.findNext("table", {"class": "tablaDataGrid"})
-        team = 'away_team'
+            '''Gets all the data'''
+            a = table.tr
+            a = a.next_sibling  # Needed beacuse the first <tr> is an empty string
+            while a.next_sibling.next_sibling != None:
+                b = a.td
+                c = 0
+                '''Variable defition'''
+                stat = {}
+                stat['team'] = team
+                for i in range(18):
+                    if i == 0:  # Titular o no
+                        tit = False
+                        if b.string == None:
+                            tit = True
+                        # print('Titular:', tit)
+                        stat['starter'] = (tit)
+                    if i == 1:  # Numero de jugador
+                        # print('Num jug:', b.span.string)
+                        stat['NUMBER'] = (b.span.string)
+                    if i == 2:  # Nombre jugador
+                        # print('nombre:', b.a.string)
+                        stat['PLAYER'] = (b.a.string)
+                    if i == 3:  # Minutos jugados
+                        # print('Min:', b.span.string)
+                        stat['MIN'] = (b.span.string)
+                    if i == 4:  # Puntos anotados
+                        # print('Puntos:', b.span.string)
+                        stat['PTS'] = (b.span.string)
+                    if i == 5:  # 2pts(anotados/intentados) porcentaje%
+                        # print('2pts:', b.span.string)
+                        zone = b.span.string
+                        stat['2PM'] = (zone[zone.find('/') - 1])
+                        stat['2PA'] = (zone[zone.find('/') + 1])
+                    if i == 6:  # 3pts(anotados/intentados) porcentaje%
+                        # print('3pts:', b.span.string)
+                        trip = b.span.string
+                        stat['3PM'] = (trip[trip.find('/') - 1])
+                        stat['3PA'] = (trip[trip.find('/') + 1])
+                    if i == 7:  # Tiros campo(anotados/intentados) porcentaje%
+                        hola = 1
+                        # print('Campo:', b.span.string)
+                    if i == 8:  # T.L.(anotados/intentados) porcentaje%
+                        # print('T.L:', b.span.string)
+                        free = b.span.string
+                        stat['FTM'] = (free[free.find('/') - 1])
+                        stat['FTA'] = (free[free.find('/') + 1])
+                    if i == 9:  # Rebotes, def of to
+                        c = b.td
+                        # print(b)
+                        reb = []
+                        count = 0
+                        while c.next_sibling != None:
+                            count = count + 1
+                            if count % 2 == 1:  # I dont know why but the odd children are empty strings
+                                reb.append(c.span.string)
+                            c = c.next_sibling
+                        # print('Reb: ', reb)
+                        stat['DREB'] = (reb[0])
+                        stat['OREB'] = (reb[1])
+                    if i == 10:  # Asistencias
+                        # print('As:', b.span.string)
+                        stat['AST'] = (b.span.string)
+                    if i == 11:  # Balones recuperados
+                        # print('Recuperados:', b.span.string)
+                        stat['STL'] = (b.span.string)
+                    if i == 12:  # Balones perdidos
+                        # print('perdidos:', b.span.string)
+                        stat['TOV'] = (b.span.string)
+                    if i == 13:  # Tapones, favor contra
+                        c = b.td
+                        tap = []
+                        count = 0
+                        while c.next_sibling != None:
+                            count = count + 1
+                            if count % 2 == 1:
+                                tap.append(c.span.string)
+                            c = c.next_sibling
+                        # print('Tap:', tap)
+                        stat['BLKM'] = (tap[0])
+                        stat['BLKR'] = (tap[1])
+                    if i == 14:  # Mates
+                        # print('Mates:', b.span.string)
+                        stat['DNK'] = (b.span.string)
+                    if i == 15:  # Faltas, cometidas recibidas
+                        c = b.td
+                        fal = []
+                        count = 0
+                        while c.next_sibling != None:
+                            count = count + 1
+                            if count % 2 == 1:  # I dont know why but the odd children are empty strings
+                                fal.append(c.span.string)
+                            # print(c)
+                            c = c.next_sibling
+                        # print('fouls', fal)
+                        stat['PFM'] = (fal[0])
+                        stat['PFR'] = (fal[1])
+                    if i == 16:  # Valoracion
+                        # print('Valoracion:', b.span.string)
+                        stat['VAL'] = (b.span.string)
+                    if i == 17:  # +/-
+                        # print('+/-:', b.span.string)
+                        stat['PM'] = (b.span.string)
+                    b = b.next_sibling
 
-    DBInterface.updateGameInDB(game_id)
+                '''Inserts Data in Database'''
+                DBInterface.insertStatsInDB(game_id, stat)
+
+                a = a.next_sibling
+
+            '''Find the next table to get the stats'''
+            table = table.findNext("table", {"class": "tablaDataGrid"})
+            team = 'away_team'
+
+        DBInterface.updateGameInDB(game_id)
+
+    return
 
 
 def getStatsFromLeagueURL(mainURL, leagueURL, league_id):
@@ -222,48 +238,63 @@ def getStatsFromLeagueURL(mainURL, leagueURL, league_id):
     soup = BeautifulSoup(driver.page_source, 'html.parser')
     seasons_html = soup.find("select", {"id": "temporadasDropDownList"})
 
+    finished_season = True
+
     for s in seasons_html.find_all('option'):
         s_e = (s.string).replace('/', '-')
+        scape = False
         if s_e in posible_seasons:
 
-            getSeasonURLFromYearStr(s_e, driver)
+            getSeasonURLFromYearStr(s.string, driver)
 
             print(s_e)
 
             '''check if season in database'''
             season_state = DBInterface.checkSeasonStateInDB(league_id, s_e)
             if season_state[1] == 'finished':
-                break
+                scape = True
+                continue
             elif season_state[1] == 'processing':
                 season_id = season_state[0]
             elif season_state[1] == 'not_inserted':
                 season_id = DBInterface.insertSeasonInDB(league_id, s_e)
             else:  # error
-                break
+                scape = True
+                continue
 
             soup = BeautifulSoup(driver.page_source, 'html.parser')  # html from the main page of the league (season)
             groups_html = soup.find("select", {"id": "gruposDropDownList"})
+
+            finished_group = True
+
+            first_group = True
             for g in groups_html.find_all('option'):
                 g_e = g.string
 
-                getGroupURLFromGroupNameStr(g_e, driver)
-
+                getGroupURLFromGroupNameStr(g_e, first_group, driver)
+                first_group = False
                 print(g_e)
 
                 '''check if group in database'''
                 group_state = DBInterface.checkGroupStateInDB(season_id, g_e)
                 if group_state[1] == 'finished':
-                    break
+                    scape = True
+                    continue
                 elif group_state[1] == 'processing':
                     group_id = group_state[0]
                 elif group_state[1] == 'not_inserted':
                     group_id = DBInterface.insertGroupInDB(season_id, g_e)
                 else:  # error
-                    break
+                    scape = True
+                    continue
 
                 soup = BeautifulSoup(driver.page_source, 'html.parser')  # html from the main page of the group
                 jornadas_html = soup.find("select", {"id": "jornadasDropDownList"})
                 j = len(jornadas_html.find_all('option'))
+
+                finished_jornada = True
+                scape = False
+
                 for e in jornadas_html.find_all('option'):
                     j_e = e.string
 
@@ -275,30 +306,44 @@ def getStatsFromLeagueURL(mainURL, leagueURL, league_id):
                     jornada_number = int(j_e.split(' ')[1].split('(')[0])
                     jornada_state = DBInterface.checkJornadaStateInDB(group_id, jornada_number)
                     if jornada_state[1] == 'finished':
-                        break
+                        continue
                     elif jornada_state[1] == 'processing':
                         jornada_id = jornada_state[0]
                     elif jornada_state[1] == 'not_inserted':
                         jornada_id = DBInterface.insertJornadaInDB(group_id, jornada_number)
                     else:  # error
-                        break
+                        continue
 
                     soup = BeautifulSoup(driver.page_source, 'html.parser')  # html from the main page of the jornada
-                    jornada, gamesURL = getGamesURLFromJornadaURL(soup)
-                    for g_url in gamesURL:
-                        print(g_url)
-                        getStatsFromGameURL(g_url, jornada_id)
+                    finished, jornada, gamesURL = getGamesURLFromJornadaURL(soup)
+                    finished_game = True
+                    for i in range(len(finished)):
+                        if finished[i]:
+                            getStatsFromGameURL(gamesURL[i], jornada_id)
+                        else:
+                            finished_game = False
 
-                    '''update jornada state to finish in database'''
-                    DBInterface.updateJornadaInDB(jornada_id)
+
+                    if finished_game == True:
+                        '''update jornada state to finish in database'''
+                        DBInterface.updateJornadaInDB(jornada_id)
+                    else:
+                        finished_jornada = False
 
                 '''update group state to finish in database'''
-                DBInterface.updateGroupInDB(group_id)
+                if finished_jornada == True :
+                    DBInterface.updateGroupInDB(group_id)
+                else:
+                    finished_group = False
 
-            '''update season state to finish in database'''
-            DBInterface.updateGroupInDB(season_id)
+            if finished_group == True:
+                '''update season state to finish in database'''
+                DBInterface.updateSeasonInDB(season_id)
+            else:
+                finished_season = False
 
-    '''update league state to finish'''
+
+    #'''update league state to finish'''
     # DBInterface.updateLeagueInDB(league_id)
 
     driver.close()
@@ -306,6 +351,7 @@ def getStatsFromLeagueURL(mainURL, leagueURL, league_id):
 
 
 if __name__ == '__main__':
+
     URL = 'http://competiciones.feb.es/estadisticas/default.aspx'
     posible_seasons = ['2016-2017', '2017-2018', '2018-2019', '2019-2020']
 

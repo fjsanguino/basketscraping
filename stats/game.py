@@ -60,9 +60,13 @@ def getGameDataFromGameURL(URL, jornada_id):
 
     arbitroP, arbitroA1, arbitroA2 = getReferees(soup)
 
-    home_team, away_team = getTeams(soup)
     pts_eq1, pts_eq2 = getResult(soup)
-    score_q1 = str(pts_eq1[0]) + ' - ' + str(pts_eq2[0]) 
+
+    if pts_eq1 == '0' and pts_eq2 == '0':
+        return None
+
+    home_team, away_team = getTeams(soup)
+    score_q1 = str(pts_eq1[0]) + ' - ' + str(pts_eq2[0])
     score_q2 = str(pts_eq1[1]) + ' - ' + str(pts_eq2[1]) 
     score_q3 = str(pts_eq1[2]) + ' - ' + str(pts_eq2[2]) 
     score_q4 = str(pts_eq1[3]) + ' - ' + str(pts_eq2[3]) 
