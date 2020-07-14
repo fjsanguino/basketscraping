@@ -59,7 +59,7 @@ def insertLeagueInDB(leagueName, type, gender):
 
 
     except Error as e:
-        print("Error while connecting to MySQL", e)
+        print("Error while connecting to MySQL: not possible to insert league " + str(leagueName))
     finally:
         if (connection.is_connected()):
             cursor.close()
@@ -146,7 +146,7 @@ def insertSeasonInDB(leagueid, years):
 
 
     except Error as e:
-        print("Error while connecting to MySQL", e)
+        print("Error while connecting to MySQL: ", e, "not possible to insert season with league_id = " + str(leagueid) + " and years " + str(years))
     finally:
         if (connection.is_connected()):
             cursor.close()
@@ -233,7 +233,7 @@ def insertGroupInDB(seasonid, name):
 
 
     except Error as e:
-        print("Error while connecting to MySQL", e)
+        print("Error while connecting to MySQL", e, ". Not possible to insert group with seasod_id = " + str(seasonid) + " and name = " + str(name))
     finally:
         if (connection.is_connected()):
             cursor.close()
@@ -320,7 +320,7 @@ def insertJornadaInDB(groupid, jornada):
 
 
     except Error as e:
-        print("Error while connecting to MySQL", e)
+        print("Error while connecting to MySQL", e, ". Not possible to insert jornada with group_id = " + str(groupid) + " and jornada = " + str(jornada))
     finally:
         if (connection.is_connected()):
             cursor.close()
@@ -360,6 +360,27 @@ def checkGameStateInDB(jornadaid, game): #To be checked with home_team and away_
             passwd="4I1ZMfcMXg",
             database="g3GJdRGWE4"
         )
+        if game['home_team'] != None and game['away_team'] != None and game['place'] != None and game['court'] != None:
+            if '´' in game['home_team']:
+                game['home_team'] = game['home_team'].replace('`', '')
+            if "'" in game['home_team']:
+                game['home_team'] = game['home_team'].replace("'", '')
+
+            if '´' in game['away_team']:
+                game['away_team'] = game['away_team'].replace('`', '')
+            if "'" in game['away_team']:
+                game['away_team'] = game['away_team'].replace("'", '')
+
+            if '´' in game['place']:
+                game['place'] = game['place'].replace('`', '')
+            if "'" in game['place']:
+                game['place'] = game['place'].replace("'", '')
+
+            if '´' in game['court']:
+                game['court'] = game['court'].replace('`', '')
+            if "'" in game['court']:
+                game['court'] = game['court'].replace("'", '')
+
 
         query = "select id, state_statistics from games where jornada_id = {} and home_team = '{}' and away_team = '{}'"\
             .format(jornadaid, game['home_team'], game['away_team'])
@@ -376,7 +397,7 @@ def checkGameStateInDB(jornadaid, game): #To be checked with home_team and away_
                     print('Error in game, more than two options: jornada_id: ' + jornadaid + ', game: ' + game)
 
     except Error as e:
-        print("Error while connecting to MySQL", e, " checking game with jornada_id " + jornadaid + " game" + game)
+        print("Error while connecting to MySQL", e, " checking game with jornada_id " + str(jornadaid) + " game" + str(game))
     finally:
         if (connection.is_connected()):
             cursor.close()
@@ -390,6 +411,28 @@ def insertGameInDB(jornadaid, game):
             passwd="4I1ZMfcMXg",
             database="g3GJdRGWE4"
         )
+        if game['home_team'] != None and game['away_team'] != None and game['place'] != None and game['court'] != None:
+
+            if '´' in game['home_team']:
+                game['home_team'] = game['home_team'].replace('`', '')
+            if "'" in game['home_team']:
+                game['home_team'] = game['home_team'].replace("'", '')
+
+            if '´' in game['away_team']:
+                game['away_team'] = game['away_team'].replace('`', '')
+            if "'" in game['away_team']:
+                game['away_team'] = game['away_team'].replace("'", '')
+
+            if '´' in game['place']:
+                game['place'] = game['place'].replace('`', '')
+            if "'" in game['place']:
+                game['place'] = game['place'].replace("'", '')
+
+            if '´' in game['court']:
+                game['court'] = game['court'].replace('`', '')
+            if "'" in game['court']:
+                game['court'] = game['court'].replace("'", '')
+
 
         query = "INSERT INTO games (jornada_id, home_team, away_team, result, date_played, referee_1, referee_2, referee_3, place, court, score_q1, score_q2, score_q3, score_q4, state_statistics) VALUES ({}, '{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}', 'processing')"\
             .format(jornadaid, game['home_team'], game['away_team'], game['result'], game['date_played'].strftime('%Y-%m-%d %H:%M:%S'), game['referee_1'], game['referee_2'], game['referee_3'], game['place'], game['court'], game['score_q1'], game['score_q2'], game['score_q3'], game['score_q4'])
@@ -408,7 +451,7 @@ def insertGameInDB(jornadaid, game):
 
 
     except Error as e:
-        print("Error while connecting to MySQL", e, ": Insert game with jornada_id: " + jornadaid + " game: " + game)
+        print("Error while connecting to MySQL", e, ": Insert game with jornada_id: " + str(jornadaid) + " game: " + str(game))
     finally:
         if (connection.is_connected()):
             cursor.close()
@@ -481,7 +524,7 @@ def insertStatsInDB(gameid, stats):
             cursor.close()
 
     except Error as e:
-        print("Error while connecting to MySQL ", e, " to put stats in with game_id " + gameid + " and player " + stats)
+        print("Error while connecting to MySQL ", e, " to put stats in with game_id " + str(gameid) + " and player " + str(stats))
     finally:
         if (connection.is_connected()):
             cursor.close()

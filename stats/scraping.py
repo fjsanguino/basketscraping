@@ -29,11 +29,12 @@ def getGroupURLFromGroupNameStr(busq, first, driver):
             break
 
 
-def getSeasonURLFromYearStr(busq, driver):
+def getSeasonURLFromYearStr(busq, first, driver):
     t_el = driver.find_element_by_id("temporadasDropDownList")
     for option in t_el.find_elements_by_tag_name('option'):
         if str(busq) in option.text:
-            option.click()
+            if not (first):
+                option.click()
             break
 
 
@@ -85,21 +86,25 @@ def getStatsFromGameURL(gameURL, jornada_id):
 
 
     game_data = getGameDataFromGameURL(gameURL, jornada_id)
-
+    if game_data == None:
+        return -1
 
     if game_data != None:
 
         '''check if season in database'''
         game_state = DBInterface.checkGameStateInDB(jornada_id, game_data)
         if game_state[1] == 'finished':
-            return
+            return game_state[0]
         elif game_state[1] == 'processing':
             game_id = game_state[0]
             DBInterface.removeAllStatsInDB(game_id)
         elif game_state[1] == 'not_inserted':
             game_id = DBInterface.insertGameInDB(jornada_id, game_data)
         else:  # error
-            return False
+            return 0
+
+        if game_id == None:
+            return -1
 
         print(gameURL)
 
@@ -226,7 +231,7 @@ def getStatsFromGameURL(gameURL, jornada_id):
 
         DBInterface.updateGameInDB(game_id)
 
-    return
+    return game_id
 
 
 def getStatsFromLeagueURL(mainURL, leagueURL, league_id):
@@ -240,27 +245,31 @@ def getStatsFromLeagueURL(mainURL, leagueURL, league_id):
 
     finished_season = True
 
+    first_season = True
     for s in seasons_html.find_all('option'):
         s_e = (s.string).replace('/', '-')
-        scape = False
+
         if s_e in posible_seasons:
 
-            getSeasonURLFromYearStr(s.string, driver)
+            getSeasonURLFromYearStr(s.string, first_season, driver)
+            first_season = False
 
             print(s_e)
 
             '''check if season in database'''
             season_state = DBInterface.checkSeasonStateInDB(league_id, s_e)
             if season_state[1] == 'finished':
-                scape = True
                 continue
             elif season_state[1] == 'processing':
                 season_id = season_state[0]
             elif season_state[1] == 'not_inserted':
                 season_id = DBInterface.insertSeasonInDB(league_id, s_e)
             else:  # error
-                scape = True
                 continue
+
+            if season_id == None:
+                continue
+
 
             soup = BeautifulSoup(driver.page_source, 'html.parser')  # html from the main page of the league (season)
             groups_html = soup.find("select", {"id": "gruposDropDownList"})
@@ -278,14 +287,16 @@ def getStatsFromLeagueURL(mainURL, leagueURL, league_id):
                 '''check if group in database'''
                 group_state = DBInterface.checkGroupStateInDB(season_id, g_e)
                 if group_state[1] == 'finished':
-                    scape = True
                     continue
                 elif group_state[1] == 'processing':
                     group_id = group_state[0]
                 elif group_state[1] == 'not_inserted':
                     group_id = DBInterface.insertGroupInDB(season_id, g_e)
                 else:  # error
-                    scape = True
+                    continue
+
+                if group_id == None:
+                    finished_group = False
                     continue
 
                 soup = BeautifulSoup(driver.page_source, 'html.parser')  # html from the main page of the group
@@ -293,7 +304,7 @@ def getStatsFromLeagueURL(mainURL, leagueURL, league_id):
                 j = len(jornadas_html.find_all('option'))
 
                 finished_jornada = True
-                scape = False
+
 
                 for e in jornadas_html.find_all('option'):
                     j_e = e.string
@@ -314,15 +325,20 @@ def getStatsFromLeagueURL(mainURL, leagueURL, league_id):
                     else:  # error
                         continue
 
+                    if jornada_id == None:
+                        finished_jornada = False
+                        continue
+
                     soup = BeautifulSoup(driver.page_source, 'html.parser')  # html from the main page of the jornada
                     finished, jornada, gamesURL = getGamesURLFromJornadaURL(soup)
                     finished_game = True
                     for i in range(len(finished)):
                         if finished[i]:
-                            getStatsFromGameURL(gamesURL[i], jornada_id)
+                            game_id = getStatsFromGameURL(gamesURL[i], jornada_id)
+                            if game_id == -1:
+                                finished_game = False
                         else:
                             finished_game = False
-
 
                     if finished_game == True:
                         '''update jornada state to finish in database'''
