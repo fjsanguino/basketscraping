@@ -1,7 +1,5 @@
-import requests
-from bs4 import BeautifulSoup
-import pandas as pd
 from datetime import datetime
+from games import Game
 
 '''Sends a GET HTTP request to the given URL'''
 # PARTIDO DE EJEMPLO
@@ -38,11 +36,9 @@ def getReferees(soup):
     return arbitros
 
 def getTeams(soup):
-    table_cuartos = soup.find("table", {"class": "tablaResultadosCuartos"})
-    if table_cuartos == None:
-        return None, None
-    home_team = str(table_cuartos.find_all('span')[0].text)
-    away_team = str(table_cuartos.find_all('span')[5].text)
+    home_team = soup.find("td", {"class": "equipoLocal"}).text
+    away_team = soup.find("td", {"class": "equipoVisitante"}).text
+    print(home_team, away_team)
     return home_team, away_team
 
 def getResult(soup):
@@ -69,13 +65,11 @@ def getLocation(soup):
     region = str(soup.find("span", {"id": "provinciaLabel"}).text)
     return court, city, region
 
-def getGameDataFromGameURL(URL, jornada_id):
-    page = requests.get(URL)
-    soup = BeautifulSoup(page.content, 'html.parser')
+def getGameDataFromGameURL(soup):
 
-    fecha = getDate(soup)
+    date_played = getDate(soup)
 
-    arbitroP, arbitroA1, arbitroA2 = getReferees(soup)
+    referee_1, referee_2, referee_3 = getReferees(soup)
 
     pts_eq1, pts_eq2 = getResult(soup)
 
@@ -97,13 +91,7 @@ def getGameDataFromGameURL(URL, jornada_id):
     court, city, region = getLocation(soup)
     place = city + ', ' + region
 
-    d = {"home_team": home_team, "away_team": away_team, "result": result, "date_played": fecha, "jornada_id": jornada_id, "referee_1": arbitroP, "referee_2": arbitroA1, "referee_3": arbitroA2, "place": place, "court": court, "score_q1": score_q1, "score_q2": score_q2, "score_q3": score_q3, "score_q4": score_q4}
+    game = Game(home_team, away_team, result, date_played, referee_1, referee_2, referee_3, place, court, score_q1, score_q2, score_q3, score_q4, None, True, 'processing')
+    return game
 
-    return d
-
-# SE NECESITA PASAR "league_id" y "jornada"
-# 3 y 12 inventadas de ejemplo
-#URL = 'http://competiciones.feb.es/estadisticas/Partido.aspx?p=2097555&med=0'
-
-#getGameDataFromGameURL(URL, 78)
 
